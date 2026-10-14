@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pellet Math - app</title>
+<link rel="stylesheet" href="https://unpkg.com/sakura.css/css/sakura.css">
+<style>
+  :root { --accent: #243244; }
+  h1 { color: var(--accent); margin-bottom: 0.2em; }
+  .tag { color: var(--accent); font-style: italic; }
+  .card { border: 1px solid #ddd; border-left: 4px solid var(--accent); padding: 1em 1.2em; margin: 1.2em 0; border-radius: 4px; }
+  .big { font-size: 1.2rem; font-weight: 700; color: var(--accent); margin-top: 0.8em; }
+  .err { color: #b00; font-weight: 700; }
+  label { display: block; margin-top: 0.6em; font-size: 0.9em; }
+  input, select { max-width: 12em; }
+  .foot { margin-top: 2.5em; font-size: 0.85em; color: #777; }
+</style>
+</head>
+<body>
+<h1>Pellet Math</h1>
+<p class="tag">Hopper hours, cold cuts and cook cost - labeled norms, honest arithmetic.</p>
+
+<div class="card">
+  <h3>Dial burn norm</h3>
+  <label for="b-set">Dial setting</label>
+  <select id="b-set">
+    <option value="smoke">smoke</option>
+    <option value="225" selected>225</option>
+    <option value="275">275</option>
+    <option value="350">350</option>
+    <option value="sear">sear</option>
+  </select>
+  <p class="big" id="b-out"></p>
+</div>
+
+<div class="card">
+  <h3>Hopper hours</h3>
+  <label for="h-hop">Hopper capacity (lb)</label>
+  <input id="h-hop" type="number" step="any" value="20">
+  <label for="h-set">Dial setting</label>
+  <select id="h-set">
+    <option value="smoke">smoke</option>
+    <option value="225" selected>225</option>
+    <option value="275">275</option>
+    <option value="350">350</option>
+    <option value="sear">sear</option>
+  </select>
+  <label for="h-temp">Outside temperature (F)</label>
+  <input id="h-temp" type="number" step="any" value="35">
+  <p class="big" id="h-out"></p>
+</div>
+
+<div class="card">
+  <h3>Cook cost</h3>
+  <label for="c-price">Bag price ($)</label>
+  <input id="c-price" type="number" step="any" value="14">
+  <label for="c-lb">Bag weight (lb)</label>
+  <input id="c-lb" type="number" step="any" value="20">
+  <label for="c-hours">Cook length (hours)</label>
+  <input id="c-hours" type="number" step="any" value="12">
+  <label for="c-set">Dial setting</label>
+  <select id="c-set">
+    <option value="smoke">smoke</option>
+    <option value="225" selected>225</option>
+    <option value="275">275</option>
+    <option value="350">350</option>
+    <option value="sear">sear</option>
+  </select>
+  <p class="big" id="c-out"></p>
+</div>
+
+<p class="foot">Burn rates are labeled norms - the box's hopper hours belong to a windless 70&nbsp;F afternoon, and the cold eats from the same bag.</p>
+
+<script src="engine.js"></script>
+<script>
+function g(id){ return document.getElementById(id); }
+function v(id){ var n = parseFloat(g(id).value); return isNaN(n) ? NaN : n; }
+function show(id, s, bad){ var el = g(id); el.textContent = s; el.className = bad ? "err big" : "big"; }
+
+function runBurn(){
+  var s = g("b-set").value;
+  var r = PelletMath.burnPlan(s);
+  if (r.error) return show("b-out", r.error, true);
+  show("b-out", PelletMath.renderBurn(r, s), false);
+}
+function runHopper(){
+  var args = [v("h-hop"), g("h-set").value, v("h-temp")];
+  var r = PelletMath.hopperPlan.apply(null, args);
+  if (r.error) return show("h-out", r.error, true);
+  show("h-out", PelletMath.renderHopper.apply(null, [r].concat(args)), false);
+}
+function runCost(){
+  var args = [v("c-price"), v("c-lb"), v("c-hours"), g("c-set").value];
+  var r = PelletMath.costPlan.apply(null, args);
+  if (r.error) return show("c-out", r.error, true);
+  show("c-out", PelletMath.renderCost.apply(null, [r].concat(args)), false);
+}
+["b-set"].forEach(function(id){ g(id).addEventListener("change", runBurn); });
+["h-hop","h-set","h-temp"].forEach(function(id){ g(id).addEventListener("input", runHopper); g(id).addEventListener("change", runHopper); });
+["c-price","c-lb","c-hours","c-set"].forEach(function(id){ g(id).addEventListener("input", runCost); g(id).addEventListener("change", runCost); });
+runBurn(); runHopper(); runCost();
+</script>
+</body>
+</html>
